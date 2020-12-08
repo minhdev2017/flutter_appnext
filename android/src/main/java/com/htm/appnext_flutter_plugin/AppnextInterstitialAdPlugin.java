@@ -72,7 +72,7 @@ class AppnextInterstitialAdPlugin implements MethodChannel.MethodCallHandler {
         interstitialAd.setOnAdClosedCallback(new OnAdClosed() {
           @Override
           public void onAdClosed() {
-            channel.invokeMethod(AppnextConstants.REWARDED_VIDEO_CLOSED_METHOD, true);
+            channel.invokeMethod(AppnextConstants.DISMISSED_METHOD, true);
           }
         });
 
@@ -91,7 +91,7 @@ class AppnextInterstitialAdPlugin implements MethodChannel.MethodCallHandler {
         interstitialAd.setOnVideoEndedCallback(new OnVideoEnded() {
           @Override
           public void videoEnded() {
-            channel.invokeMethod(AppnextConstants.REWARDED_VIDEO_COMPLETE_METHOD, true);
+            //channel.invokeMethod(AppnextConstants.REWARDED_VIDEO_COMPLETE_METHOD, true);
           }
         });
       }
