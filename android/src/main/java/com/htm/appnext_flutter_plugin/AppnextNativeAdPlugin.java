@@ -12,13 +12,6 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 
-import com.appnext.core.AppnextError;
-import com.appnext.nativeads.MediaView;
-import com.appnext.nativeads.NativeAd;
-import com.appnext.nativeads.NativeAdListener;
-import com.appnext.nativeads.NativeAdRequest;
-import com.appnext.nativeads.NativeAdView;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -40,7 +33,7 @@ class AppnextNativeAdPlugin extends PlatformViewFactory {
 
     @Override
     public PlatformView create(Context context, int id, Object args) {
-        return new AppnextNativeAdView(context, id, (HashMap) args, this.messenger);
+        return new AppnextNativeAdView();
     }
 }
 

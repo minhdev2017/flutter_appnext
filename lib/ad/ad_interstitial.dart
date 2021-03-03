@@ -110,6 +110,7 @@ class AppNextInterstitialAd {
   }
 
   static Future<dynamic> _interstitialMethodCall(MethodCall call) {
+    print("iron: ${call.method}");
     switch (call.method) {
       case DISPLAYED_METHOD:
         if (_listener != null)

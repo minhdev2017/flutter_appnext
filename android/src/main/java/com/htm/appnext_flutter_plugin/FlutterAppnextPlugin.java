@@ -4,7 +4,10 @@ import android.app.Activity;
 
 import androidx.annotation.NonNull;
 
-import com.appnext.base.Appnext;
+
+import com.ironsource.adapters.supersonicads.SupersonicConfig;
+import com.ironsource.mediationsdk.IronSource;
+import com.ironsource.mediationsdk.integration.IntegrationHelper;
 
 import java.util.HashMap;
 
@@ -26,6 +29,7 @@ public class FlutterAppnextPlugin implements  MethodCallHandler, FlutterPlugin, 
   /// when the Flutter Engine is detached from the Activity
   private Activity mActivity;
   private MethodChannel channel;
+  private FlutterPluginBinding flutterPluginBinding;
 
 
   /*private FlutterAppnextPlugin(Activity activity){
@@ -38,23 +42,12 @@ public class FlutterAppnextPlugin implements  MethodCallHandler, FlutterPlugin, 
   public void onAttachedToEngine(@NonNull FlutterPlugin.FlutterPluginBinding flutterPluginBinding) {
     channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), AppnextConstants.MAIN_CHANNEL);
     channel.setMethodCallHandler(this);
-    flutterPluginBinding.getPlatformViewRegistry().registerViewFactory(AppnextConstants.BANNER_AD_CHANNEL,
-            new AppnextBannerAdPlugin(flutterPluginBinding.getBinaryMessenger()));
-    flutterPluginBinding.getPlatformViewRegistry().registerViewFactory(AppnextConstants.NATIVE_AD_CHANNEL,
-            new AppnextNativeAdPlugin(flutterPluginBinding.getBinaryMessenger()));
+    this.flutterPluginBinding = flutterPluginBinding;
+    /*flutterPluginBinding.getPlatformViewRegistry().registerViewFactory(AppnextConstants.NATIVE_AD_CHANNEL,
+            new AppnextNativeAdPlugin(flutterPluginBinding.getBinaryMessenger()));*/
 
-    interstitialAdChannel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(),
-            AppnextConstants.INTERSTITIAL_AD_CHANNEL);
-    interstitialAdChannel
-            .setMethodCallHandler(new AppnextInterstitialAdPlugin(flutterPluginBinding.getApplicationContext(),
-                    interstitialAdChannel));
 
-    // Rewarded video Ad channel
-    rewardedAdChannel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(),
-            AppnextConstants.REWARDED_VIDEO_CHANNEL);
-    rewardedAdChannel
-            .setMethodCallHandler(new AppnextRewardedVideoAdPlugin(flutterPluginBinding.getApplicationContext(),
-                    rewardedAdChannel));
+
   }
 
 
@@ -63,13 +56,29 @@ public class FlutterAppnextPlugin implements  MethodCallHandler, FlutterPlugin, 
     channel.setMethodCallHandler(null);
     rewardedAdChannel.setMethodCallHandler(null);
     interstitialAdChannel.setMethodCallHandler(null);
+    this.flutterPluginBinding = null;
   }
 
   @Override
   public void onAttachedToActivity(ActivityPluginBinding activityPluginBinding) {
     // TODO: your plugin is now attached to an Activity
-    this.mActivity = activityPluginBinding.getActivity();
-    Appnext.init(mActivity.getApplicationContext());
+    if(this.mActivity == null){
+      this.mActivity = activityPluginBinding.getActivity();
+      flutterPluginBinding.getPlatformViewRegistry().registerViewFactory(AppnextConstants.BANNER_AD_CHANNEL,
+        new AppnextBannerAdPlugin(flutterPluginBinding.getBinaryMessenger(),mActivity));
+      interstitialAdChannel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(),
+        AppnextConstants.INTERSTITIAL_AD_CHANNEL);
+      interstitialAdChannel
+        .setMethodCallHandler(new AppnextInterstitialAdPlugin(this.mActivity,
+          interstitialAdChannel));
+      // Rewarded video Ad channel
+      rewardedAdChannel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(),
+        AppnextConstants.REWARDED_VIDEO_CHANNEL);
+      rewardedAdChannel
+        .setMethodCallHandler(new AppnextRewardedVideoAdPlugin(this.mActivity,
+          rewardedAdChannel));
+    }
+
   }
 
   @Override
@@ -127,13 +136,25 @@ public class FlutterAppnextPlugin implements  MethodCallHandler, FlutterPlugin, 
   public void onMethodCall(MethodCall call, Result result) {
 
     if (call.method.equals(AppnextConstants.INIT_METHOD))
-      result.success(init(null));
+      result.success(init(call.<String>argument("appKey")));
+    else if (call.method.equals("validateIntegration")) {
+      IntegrationHelper.validateIntegration(mActivity);
+      result.success(null);
+    }
+    else if (call.method.equals("onResume")) {
+      IronSource.onResume(mActivity);
+      result.success(null);
+    } else if (call.method.equals("onPause")) {
+      IronSource.onPause(mActivity);
+      result.success(null);
+    }
     else
       result.notImplemented();
   }
 
-  private boolean init(HashMap initValues) {
-    Appnext.init(mActivity.getApplicationContext());
+  private boolean init(String key) {
+    SupersonicConfig.getConfigObj().setClientSideCallbacks(true);
+    IronSource.init(mActivity, key,IronSource.AD_UNIT.BANNER,IronSource.AD_UNIT.INTERSTITIAL,IronSource.AD_UNIT.REWARDED_VIDEO);
     return true;
   }
 }

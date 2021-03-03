@@ -23,7 +23,7 @@ class AppnextFlutterPlugin {
   /// Check the log to obtain the [testingId] for your device.
   static Future<bool> init({String id}) async {
     Map<String, String> initValues = {
-      "id": id,
+      "appKey": id,
     };
 
     try {
@@ -32,6 +32,17 @@ class AppnextFlutterPlugin {
     } on PlatformException {
       return false;
     }
+  }
+  static Future<Null> validateIntegration() async {
+    await _channel.invokeMethod('validateIntegration');
+  }
+
+  static Future<Null> activityResumed() async {
+    await _channel.invokeMethod('onResume');
+  }
+
+  static Future<Null> activityPaused() async {
+    await _channel.invokeMethod('onPause');
   }
 
   /// Loads an Interstitial Ad in background. Replace the default [placementId]
@@ -59,6 +70,8 @@ class AppnextFlutterPlugin {
       listener: listener,
     );
   }
+
+
 
   /// Shows an Interstitial Ad after it has been loaded. (This needs to be called
   /// only after calling [loadInterstitialAd] function). [delay] is in

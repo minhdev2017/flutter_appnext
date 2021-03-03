@@ -17,7 +17,7 @@ rootProject.allprojects {
         google()
         jcenter()
         maven {
-            url "http://dl.appnext.com/"
+            url "https://dl.bintray.com/ironsource-mobile/android-sdk"
         }
     }
 }
@@ -37,10 +37,8 @@ android {
 
 dependencies {
     implementation 'com.google.android.gms:play-services-ads-identifier:17.0.0'
-    implementation 'com.github.bumptech.glide:glide:4.11.0' // Mandatory
-    annotationProcessor 'com.github.bumptech.glide:compiler:4.11.0'
-    implementation 'com.appnext.sdk:ads:2.4.2.472'
-    implementation 'com.appnext.sdk:core:2.4.2.472'
-    implementation 'com.appnext.sdk:native-ads2:2.4.2.472'
-    implementation 'com.appnext.sdk:banners:2.4.2.472'
+    //implementation 'com.google.android.gms:play-services-basement:17.1.0'
+    //implementation 'com.ironsource.sdk:mediationsdk:7.1.0.2'
+    implementation 'com.google.ads.mediation:ironsource:7.0.4.1.0'
+
 }

@@ -1,31 +1,31 @@
 package com.htm.appnext_flutter_plugin;
 
+import android.app.Activity;
 import android.content.Context;
 import android.os.Handler;
 import android.util.Log;
 
-import com.appnext.ads.fullscreen.RewardedVideo;
-import com.appnext.core.callbacks.OnAdClosed;
-import com.appnext.core.callbacks.OnAdError;
-import com.appnext.core.callbacks.OnAdLoaded;
-import com.appnext.core.callbacks.OnVideoEnded;
+import com.ironsource.mediationsdk.IronSource;
+import com.ironsource.mediationsdk.logger.IronSourceError;
+import com.ironsource.mediationsdk.model.Placement;
+import com.ironsource.mediationsdk.sdk.RewardedVideoListener;
 
 import java.util.HashMap;
 
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 
-class AppnextRewardedVideoAdPlugin implements MethodChannel.MethodCallHandler {
+class AppnextRewardedVideoAdPlugin implements MethodChannel.MethodCallHandler, RewardedVideoListener {
 
 
-    private Context context;
+    private Activity context;
     private MethodChannel channel;
 
-    private RewardedVideo rewardedVideoAd = null;
 
-    AppnextRewardedVideoAdPlugin(Context context, MethodChannel channel) {
+    AppnextRewardedVideoAdPlugin(Activity context, MethodChannel channel) {
         this.context = context;
         this.channel = channel;
+      IronSource.setRewardedVideoListener(this);
     }
 
 
@@ -47,74 +47,98 @@ class AppnextRewardedVideoAdPlugin implements MethodChannel.MethodCallHandler {
         }
     }
     private boolean loadAd(HashMap args) {
-        final String placementId = (String) args.get("id");
+      /*if(IronSource.isRewardedVideoAvailable()){
+        HashMap<String, Object> args1 = new HashMap<>();
+        args.put("message", "");
 
-        if (rewardedVideoAd == null) {
-            rewardedVideoAd = new RewardedVideo(context, placementId);
-        }
-        try {
-            if (!rewardedVideoAd.isAdLoaded()) {
-                rewardedVideoAd.loadAd();
-                rewardedVideoAd.setOnAdLoadedCallback(new OnAdLoaded() {
-                    @Override
-                    public void adLoaded(String s) {
-                        HashMap<String, Object> args = new HashMap<>();
-                        args.put("message", s);
+        channel.invokeMethod(AppnextConstants.LOADED_METHOD, args);
+      }else{
+        HashMap<String, Object> args1 = new HashMap<>();
+        args.put("error_message", "");
 
-                        channel.invokeMethod(AppnextConstants.LOADED_METHOD, args);
-                    }
-                });
-                rewardedVideoAd.setOnAdClosedCallback(new OnAdClosed() {
-                    @Override
-                    public void onAdClosed() {
-                        channel.invokeMethod(AppnextConstants.REWARDED_VIDEO_CLOSED_METHOD, true);
-                    }
-                });
-
-// Get callback for ad error
-                rewardedVideoAd.setOnAdErrorCallback(new OnAdError() {
-                    @Override
-                    public void adError(String error) {
-                        HashMap<String, Object> args = new HashMap<>();
-                        args.put("error_message", error);
-
-                        channel.invokeMethod(AppnextConstants.ERROR_METHOD, args);
-                    }
-                });
-
-// Get callback when the user saw the video until the end (video ended)
-                rewardedVideoAd.setOnVideoEndedCallback(new OnVideoEnded() {
-                    @Override
-                    public void videoEnded() {
-                        channel.invokeMethod(AppnextConstants.REWARDED_VIDEO_COMPLETE_METHOD, true);
-                    }
-                });
-            }
-        } catch (Exception e) {
-            Log.e("RewardedVideoAdError", e.getMessage());
-            return false;
-        }
+        channel.invokeMethod(AppnextConstants.ERROR_METHOD, args1);
+      }*/
 
         return true;
     }
 
     private boolean showAd(HashMap args) {
-        final int delay = (int) args.get("delay");
-
-        if (rewardedVideoAd == null || !rewardedVideoAd.isAdLoaded())
-            return false;
-        rewardedVideoAd.showAd();
+      if(IronSource.isRewardedVideoAvailable()) {
+        IronSource.showRewardedVideo();
         return true;
+      }else{
+        return false;
+      }
     }
 
     private boolean destroyAd() {
-        if (rewardedVideoAd == null)
-            return false;
-        else {
-            rewardedVideoAd.destroy();
-            rewardedVideoAd = null;
-        }
+
         return true;
     }
+
+  @Override
+  public void onRewardedVideoAdOpened() {
+  }
+  /*Invoked when the RewardedVideo ad view is about to be closed.
+  Your activity will now regain its focus.*/
+  @Override
+  public void onRewardedVideoAdClosed() {
+    context.runOnUiThread(
+      new Runnable() {
+        public void run() {
+          channel.invokeMethod(AppnextConstants.REWARDED_VIDEO_CLOSED_METHOD, true);
+        }
+      }
+    );
+
+  }
+  /**
+   * Invoked when there is a change in the ad availability status.
+   *
+   * @param - available - value will change to true when rewarded videos are *available.
+   *          You can then show the video by calling showRewardedVideo().
+   *          Value will change to false when no videos are available.
+   */
+  @Override
+  public void onRewardedVideoAvailabilityChanged(boolean available) {
+    //Change the in-app 'Traffic Driver' state according to availability.
+  }
+  /**
+   /**
+   * Invoked when the user completed the video and should be rewarded.
+   * If using server-to-server callbacks you may ignore this events and wait *for the callback from the ironSource server.
+   *
+   * @param - placement - the Placement the user completed a video from.
+   */
+  @Override
+  public void onRewardedVideoAdRewarded(Placement placement) {
+    context.runOnUiThread(
+      new Runnable() {
+        public void run() {
+          channel.invokeMethod(AppnextConstants.REWARDED_VIDEO_COMPLETE_METHOD, true);
+        }
+      }
+    );
+  }
+  /* Invoked when RewardedVideo call to show a rewarded video has failed
+   * IronSourceError contains the reason for the failure.
+   */
+  @Override
+  public void onRewardedVideoAdShowFailed(IronSourceError error) {
+  }
+  /*Invoked when the end user clicked on the RewardedVideo ad
+   */
+  @Override
+  public void onRewardedVideoAdClicked(Placement placement){
+  }
+
+  @Override
+  public void onRewardedVideoAdStarted(){
+  }
+  /* Invoked when the video ad finishes plating. */
+  @Override
+  public void onRewardedVideoAdEnded(){
+    //channel.invokeMethod(AppnextConstants.REWARDED_VIDEO_E, true);
+  }
 
 }
